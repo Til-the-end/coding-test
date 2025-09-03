@@ -1,0 +1,80 @@
+import sys
+input = sys.stdin.readline
+
+from collections import deque
+
+dh = [-1, 1, 0, 0]
+dw = [0, 0, -1, 1]
+
+tc = int(input())
+
+for _ in range(tc) :
+    W, H = map(int, input().split())
+
+    g = []
+    fire = deque()
+    person = deque()
+
+    visited = [[False] * W for _ in range(H)]
+
+    for r in range(H) :
+        row = list(input().strip())
+        g.append(row)
+
+        for c, value in enumerate(row) :
+            if value == '*' :
+                fire.append((r, c, 0)) # h, w, sec - 불 시작점
+            elif value == '@' :
+                pr, ps = r, c
+                person.append((r, c, 0)) # 사람 시작
+                visited[r][c] = True
+
+    # 1. 불 도착 시간 전부 계산
+    INF = 1e9
+    fire_time = [[INF] * W for _ in range(H)]
+
+    while fire :
+        h, w, sec = fire.popleft()
+
+        # 이 전에 이미 방문했다면
+        if fire_time[h][w] <= sec :
+            continue
+
+        fire_time[h][w] = sec
+
+        for k in range(4) :
+            nh = h + dh[k]
+            nw = w + dw[k]
+
+            if 0 <= nh < H and 0 <= nw < W :
+                if g[nh][nw] != '#' and fire_time[nh][nw] == INF :
+                    fire_time[nh][nw] = sec+1
+                    fire.append((nh, nw, sec+1))
+
+    # 2. 사람 bfs (불보다 먼저 / 동시에 불이 오지 않는 칸만)
+    escaped = False
+    while person and not escaped :
+        h, w, sec = person.popleft()
+
+        for k in range(4) :
+            nh = h + dh[k]
+            nw = w + dw[k]
+
+            if nh < 0 or nh >= H or nw < 0 or nw >= W :
+                print(sec+1)
+                escaped = True
+                break
+
+            if visited[nh][nw] :
+                continue
+            if g[nh][nw] == '#' :
+                continue
+            # 불이 이미 왔다가, sec+1 시점에 도착하는 불과 충돌하면 못 감
+            if fire_time[nh][nw] <= (sec + 1) :
+                continue
+
+            visited[nh][nw] = True
+            person.append((nh, nw, sec+1))
+
+    if not escaped :
+        print('IMPOSSIBLE')
